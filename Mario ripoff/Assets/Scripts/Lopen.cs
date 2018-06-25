@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class Lopen : MonoBehaviour
 {
@@ -12,30 +13,71 @@ public class Lopen : MonoBehaviour
     public Animator anim;
     public bool grounded;
     public float jump;
-    private Rigidbody rb;
+    private Rigidbody2D rb;
     public float jumpForce;
+    private PolygonCollider2D col;
+    public bool op;
+    
 
     private void Start()
     {
-        rb = GetComponent<Rigidbody>();
+        rb = GetComponent<Rigidbody2D>();
+        col = GetComponent<PolygonCollider2D>();
     }
 
-
-    public void OnCollisionEnter(Collision collision)
+    public void Update()
     {
-        if (collision.gameObject.tag == "Enemy")
+        
+    }
+
+    private void OnCollisionStay2D(Collision2D collision)
+    {
+        if ((collision.gameObject.tag == "Enemy" && op == false))
         {
-            Destroy(gameObject);
+            anim.SetBool("Death", true);
+            GameManager.instance.Death();
+            GameManager.isDead = true;
+            col.enabled = false;
+            rb.constraints = RigidbodyConstraints2D.FreezePosition;  
         }
-        if (collision.gameObject.CompareTag("Ground"))
+
+        else if ((collision.gameObject.tag == "Enemy" && op == true))
+        {
+            Destroy(collision.gameObject);
+        }
+        else if (collision.gameObject.tag == "Ground")
         {
             grounded = true;
             anim.SetTrigger("Land");
         }
+       
+
     }
 
-    void OnCollisionExit(Collision collision)
+    public void OnTriggerEnter2D(Collider2D collide)
     {
+        if (collide.transform.tag == "Coin")
+        {
+            print("1");
+            CoinManager.instance.IncreaseCoins(1);
+            Destroy(collide.gameObject);
+            SoundManager.instance.PlayAudio(SoundManager.instance.coinSound);
+            
+
+        }
+
+        if (collide.transform.tag == "Fish")
+        {
+            transform.localScale += new Vector3(1.0F, 1, 1);
+            Destroy(collide.gameObject);
+            op = true;
+
+
+        }
+    }
+
+    public void OnCollisionExit2D(Collision2D collision)
+    { 
         Debug.Log("Exited");
         if (collision.gameObject.CompareTag("Ground"))
         {
@@ -50,29 +92,32 @@ public class Lopen : MonoBehaviour
     }
         void FixedUpdate()
     {
-
-        hor = Input.GetAxis("Horizontal");
-        A.x = hor;
-        transform.Translate(A * Time.deltaTime * speed);
-        anim.SetFloat("Speed", hor);
-
-        if(Input.GetButtonDown("Jump")&& grounded == true)
+        if (GameManager.isDead == false)
         {
-            //rb.AddForce(new Vector3(0, jumpForce, 0));
-            rb.velocity += Vector3.up * jumpForce;
-            anim.SetTrigger("Jump");
-        }
+            hor = Input.GetAxis("Horizontal");
+            A.x = hor;
+            transform.Translate(A * Time.deltaTime * speed);
+            anim.SetFloat("Speed", hor);
 
-        if ( hor < 0)
-        {
-            mijnSpriteRenderer.flipX = true;
+            if (Input.GetButtonDown("Jump") && grounded == true)
+            {
+                //rb.AddForce(new Vector3(0, jumpForce, 0));
+                rb.velocity += Vector2.up * jumpForce;
+                anim.SetTrigger("Jump");
+            }
+
+            if (hor < 0)
+            {
+                mijnSpriteRenderer.flipX = true;
 
 
+            }
+            else if (hor > 0)
+            {
+                mijnSpriteRenderer.flipX = false;
+            }
         }
-        else if (hor > 0)
-        {
-            mijnSpriteRenderer.flipX = false;
-        }
+       
         } 
     }
 
